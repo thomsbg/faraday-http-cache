@@ -103,6 +103,7 @@ module Faraday
       end
 
       response.on_complete do
+        env[:http_cache_trace] = @trace.dup
         log_request
       end
     end

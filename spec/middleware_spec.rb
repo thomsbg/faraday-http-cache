@@ -26,6 +26,11 @@ describe Faraday::HttpCache do
     client.post('post').body
   end
 
+  it 'exposes the trace that POST request is unacceptable' do
+    env = client.post('post').env
+    expect(env[:http_cache_trace]).to eq([:unacceptable])
+  end
+
   it 'does not cache responses with invalid status code' do
     client.get('broken')
     expect(client.get('broken').body).to eq('2')
@@ -34,6 +39,11 @@ describe Faraday::HttpCache do
   it 'logs that a response with a bad status code is invalid' do
     expect(logger).to receive(:debug).with('HTTP Cache: [GET /broken] miss, invalid')
     client.get('broken')
+  end
+
+  it 'exposes the trace a response with a bad status code is invalid' do
+    env = client.get('broken').env
+    expect(env[:http_cache_trace]).to eq([:miss, :invalid])
   end
 
   it 'does not cache requests with a private cache control' do
@@ -46,6 +56,11 @@ describe Faraday::HttpCache do
     client.get('private')
   end
 
+  it 'exposes the trace a private response is invalid' do
+    env = client.get('private').env
+    expect(env[:http_cache_trace]).to eq([:miss, :invalid])
+  end
+
   it 'does not cache requests with a explicit no-store directive' do
     client.get('dontstore')
     expect(client.get('dontstore').body).to eq('2')
@@ -56,20 +71,30 @@ describe Faraday::HttpCache do
     client.get('dontstore')
   end
 
+  it 'exposes the trace a response with a no-store directive is invalid' do
+    env = client.get('dontstore').env
+    expect(env[:http_cache_trace]).to eq([:miss, :invalid])
+  end
+
   it 'caches multiple responses when the headers differ' do
     client.get('get', nil, 'HTTP_ACCEPT' => 'text/html')
     expect(client.get('get', nil, 'HTTP_ACCEPT' => 'text/html').body).to eq('1')
     expect(client.get('get', nil, 'HTTP_ACCEPT' => 'application/json').body).to eq('2')
   end
 
-  it 'caches requests with the "Expires" header' do
+  it 'caches responses with the "Expires" header' do
     client.get('expires')
     expect(client.get('expires').body).to eq('1')
   end
 
-  it 'logs that a request with the "Expires" is fresh and stored' do
+  it 'logs that a response with the "Expires" is fresh and stored' do
     expect(logger).to receive(:debug).with('HTTP Cache: [GET /expires] miss, store')
     client.get('expires')
+  end
+
+  it 'exposes the trace a response with the "Expires" is fresh and stored' do
+    env = client.get('expires').env
+    expect(env[:http_cache_trace]).to eq([:miss, :store])
   end
 
   it 'caches GET responses' do
@@ -80,6 +105,11 @@ describe Faraday::HttpCache do
   it 'logs that a GET response is stored' do
     expect(logger).to receive(:debug).with('HTTP Cache: [GET /get] miss, store')
     client.get('get')
+  end
+
+  it 'exposes the trace that a GET response is stored' do
+    env = client.get('get').env
+    expect(env[:http_cache_trace]).to eq([:miss, :store])
   end
 
   it 'differs requests with different query strings in the log' do
@@ -95,6 +125,13 @@ describe Faraday::HttpCache do
     client.get('get')
   end
 
+  it 'exposes the trace that astored GET response is fresh' do
+    client.get('get')
+    env = client.get('get').env
+    expect(env[:http_cache_trace]).to eq([:fresh])
+  end
+
+
   it 'sends the "Last-Modified" header on response validation' do
     client.get('timestamped')
     expect(client.get('timestamped').body).to eq('1')
@@ -106,6 +143,12 @@ describe Faraday::HttpCache do
     expect(client.get('timestamped').body).to eq('1')
   end
 
+  it 'exposes the trace that a request with "Last-Modified" was revalidated' do
+    client.get('timestamped')
+    env = client.get('timestamped').env
+    expect(env[:http_cache_trace]).to eq([:valid, :store])
+  end
+
   it 'sends the "If-None-Match" header on response validation' do
     client.get('etag')
     expect(client.get('etag').body).to eq('1')
@@ -115,6 +158,12 @@ describe Faraday::HttpCache do
     client.get('etag')
     expect(logger).to receive(:debug).with('HTTP Cache: [GET /etag] valid, store')
     expect(client.get('etag').body).to eq('1')
+  end
+
+    it 'exposes the trace that a request with "ETag" was revalidated' do
+    client.get('etag')
+    env = client.get('etag').env
+    expect(env[:http_cache_trace]).to eq([:valid, :store])
   end
 
   it 'maintains the "Date" header for cached responses' do
