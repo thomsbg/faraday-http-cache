@@ -60,15 +60,10 @@ module Faraday
     #
     #   # Initialize the middleware with a MemoryStore and logger
     #   Faraday::HttpCache.new(app, store: :memory_store, logger: my_logger, store_options: [size: 1024])
-    def initialize(app, *args)
+    def initialize(app, options = {})
       super(app)
       @logger = nil
-      if args.first.is_a? Hash
-        options = args.first
-        @logger = options[:logger]
-      else
-        options = parse_deprecated_options(*args)
-      end
+      @logger = options[:logger]
 
       @storage = Storage.new(options)
     end
@@ -108,61 +103,6 @@ module Faraday
     end
 
     private
-    # Internal: Receive the deprecated arguments to initialize the old API
-    # and returns a Hash compatible with the new API
-    #
-    # Examples:
-    #
-    #   parse_deprecated_options(Rails.cache)
-    #   # => { store: Rails.cache }
-    #
-    #   parse_deprecated_options(:mem_cache_store)
-    #   # => { store: :mem_cache_store }
-    #
-    #   parse_deprecated_options(:mem_cache_store, logger: Rails.logger)
-    #   # => { store: :mem_cache_store, logger: Rails.logger }
-    #
-    #   parse_deprecated_options(:mem_cache_store, 'localhost:11211')
-    #   # => { store: :mem_cache_store, store_options: ['localhost:11211] }
-    #
-    #   parse_deprecated_options(:mem_cache_store, logger: Rails.logger, serializer: Marshal)
-    #   # => { store: :mem_cache_store, logger: Rails.logger, serializer: Marshal }
-    #
-    #   parse_deprecated_options(serializer: Marshal)
-    #   # => { serializer: Marshal }
-    #
-    #   parse_deprecated_options(:file_store, { serializer: Marshal }, 'tmp')
-    #   # => { store: :file_store, serializer: Marshal, store_options: ['tmp'] }
-    #
-    #   parse_deprecated_options(:memory_store, size: 1024)
-    #   # => { store: :memory_store, store_options: [size: 1024] }
-    #
-    # Returns a hash with the following keys:
-    #   - store
-    #   - serializer
-    #   - logger
-    #   - store_options
-    #
-    # In order to check what each key means, check `Storage#initialize` description.
-    def parse_deprecated_options(*args)
-      options = {}
-      if args.length > 0
-        ActiveSupport::Deprecation.warn('This api is deprecated, refer to the documentation for the new one', caller)
-      end
-
-      options[:store] = args.shift
-
-      if args.first.is_a? Hash
-        hash_params = args.first
-        options[:serializer] = hash_params.delete(:serializer)
-
-        @logger = hash_params.delete(:logger)
-      end
-
-      options[:store_options] = args
-      options
-    end
-
     # Internal: Validates if the current request method is valid for caching.
     #
     # Returns true if the method is ':get' or ':head'.
