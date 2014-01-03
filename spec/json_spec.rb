@@ -4,7 +4,7 @@ describe Faraday::HttpCache do
   let(:client) do
     Faraday.new(url: ENV['FARADAY_SERVER']) do |stack|
       stack.response :json, content_type: /\bjson$/
-      stack.use :http_cache
+      stack.use :http_cache, store: HashCache.new
       adapter = ENV['FARADAY_ADAPTER']
       stack.headers['X-Faraday-Adapter'] = adapter
       stack.adapter adapter.to_sym

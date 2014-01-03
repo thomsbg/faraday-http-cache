@@ -1,5 +1,4 @@
 require 'digest/sha1'
-require 'active_support/cache'
 require 'active_support/core_ext/hash/keys'
 
 module Faraday
@@ -21,15 +20,13 @@ module Faraday
       # Internal: Initialize a new Storage object with a cache backend.
       #
       # options      - Storage options (default: {}).
-      #                :store         - An ActiveSupport::CacheStore identifier.
+      #                :store         - A cache object, should respond to #read
+      #                                 and #write.
       #                :serializer    - A serializer class for the body.
       #                                 Should respond to #dump and #load.
-      #                :store_options - An array containg the options for
-      #                                 the cache store
       def initialize(options = {})
-        store = options[:store]
+        @cache = options[:store]
         @serializer = options[:serializer] || MultiJson
-        @cache = ActiveSupport::Cache.lookup_store(store, options[:store_options])
       end
 
       # Internal: Writes a response with a key based on the given request.

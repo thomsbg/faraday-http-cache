@@ -6,18 +6,10 @@ describe Faraday::HttpCache::Storage do
   end
 
   let(:response) { double(serializable_hash: {}) }
-
-  let(:cache) { ActiveSupport::Cache.lookup_store }
-
+  let(:cache) { HashCache.new }
   let(:storage) { Faraday::HttpCache::Storage.new(store: cache) }
-  subject { storage }
 
-  describe 'Cache configuration' do
-    it 'lookups a ActiveSupport cache store' do
-      expect(ActiveSupport::Cache).to receive(:lookup_store).with(:file_store, ['/tmp'])
-      Faraday::HttpCache::Storage.new({ store: :file_store, store_options: ['/tmp'] })
-    end
-  end
+  subject { storage }
 
   describe 'storing responses' do
 

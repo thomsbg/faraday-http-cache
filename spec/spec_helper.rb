@@ -7,6 +7,7 @@ require 'active_support/core_ext/date/calculations'
 require 'active_support/core_ext/numeric/time'
 require 'json'
 
+require 'support/hash_cache'
 require 'support/test_app'
 require 'support/test_server'
 
