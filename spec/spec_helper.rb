@@ -3,8 +3,6 @@ require 'socket'
 
 require 'faraday-http-cache'
 require 'faraday_middleware'
-require 'active_support/core_ext/date/calculations'
-require 'active_support/core_ext/numeric/time'
 require 'json'
 
 require 'support/hash_cache'
@@ -28,5 +26,3 @@ RSpec.configure do |config|
     server.stop
   end
 end
-
-ActiveSupport::Deprecation.silenced = true

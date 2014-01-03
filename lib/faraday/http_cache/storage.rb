@@ -1,5 +1,4 @@
 require 'digest/sha1'
-require 'active_support/core_ext/hash/keys'
 
 module Faraday
   class HttpCache < Faraday::Middleware
@@ -54,7 +53,9 @@ module Faraday
         value = cache.read(key)
 
         if value
-          payload = @serializer.load(value).symbolize_keys
+          payload = @serializer.load(value).inject({}) do |memo, (k,v)|
+            memo.update(k.to_sym => v)
+          end
           klass.new(payload)
         end
       end
@@ -68,7 +69,7 @@ module Faraday
       #
       # Returns the encoded String.
       def cache_key_for(request)
-        array = request.stringify_keys.to_a.sort
+        array = request.inject([]) { |memo, (k,v)| memo << [k.to_s, v] }.sort
         Digest::SHA1.hexdigest(@serializer.dump(array))
       end
     end

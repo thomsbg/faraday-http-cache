@@ -30,7 +30,7 @@ describe Faraday::HttpCache::Storage do
       let(:storage)    { Faraday::HttpCache::Storage.new store: cache, serializer: Marshal }
       let(:serialized) { Marshal.dump(response.serializable_hash) }
       let(:cache_key) do
-        array = request.stringify_keys.to_a.sort
+        array = request.inject([]) { |memo, (k,v)| memo << [k.to_s, v] }.sort
         Digest::SHA1.hexdigest(Marshal.dump(array))
       end
       it_behaves_like 'serialization'
@@ -55,9 +55,9 @@ describe Faraday::HttpCache::Storage do
       headers = {
           'Age' => 6,
           'Cache-Control' => 'public, max-age=40',
-          'Date' => 38.seconds.ago.httpdate,
-          'Expires' => 37.seconds.from_now.httpdate,
-          'Last-Modified' => 300.seconds.ago.httpdate
+          'Date' => (Time.now - 38).httpdate,
+          'Expires' => (Time.now + 37).httpdate,
+          'Last-Modified' => (Time.now - 300).httpdate
       }
       response = Faraday::HttpCache::Response.new(response_headers: headers)
       expect(response).to be_fresh
@@ -70,8 +70,8 @@ describe Faraday::HttpCache::Storage do
 
     it 'is fresh until cached and that 1 second elapses then the response is no longer fresh' do
       headers = {
-          'Date' => 39.seconds.ago.httpdate,
-          'Expires' => 40.seconds.from_now.httpdate,
+          'Date' => (Time.now - 39).httpdate,
+          'Expires' => (Time.now + 40).httpdate,
       }
       response = Faraday::HttpCache::Response.new(response_headers: headers)
       expect(response).to be_fresh

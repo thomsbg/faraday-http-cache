@@ -1,9 +1,6 @@
 require 'faraday'
 require 'multi_json'
 
-require 'active_support/core_ext/hash/slice'
-require 'active_support/deprecation'
-
 require 'faraday/http_cache/storage'
 require 'faraday/http_cache/response'
 
@@ -211,7 +208,8 @@ module Faraday
     # Returns a 'Hash' containing the ':status', ':body' and 'response_headers'
     # entries.
     def create_response(env)
-      env.to_hash.slice(:status, :body, :response_headers)
+      hash = env.to_hash
+      { :status => hash[:status], :body => hash[:body], :response_headers => hash[:response_headers].dup }
     end
 
     # Internal: Creates a new 'Hash' containing the request information.
@@ -221,9 +219,8 @@ module Faraday
     # Returns a 'Hash' containing the ':method', ':url' and 'request_headers'
     # entries.
     def create_request(env)
-      request = env.to_hash.slice(:method, :url, :request_headers)
-      request[:request_headers] = request[:request_headers].dup
-      request
+      hash = env.to_hash
+      { :method => hash[:method], :url => hash[:url], :request_headers => hash[:request_headers].dup }
     end
 
     # Internal: Logs the trace info about the incoming request
